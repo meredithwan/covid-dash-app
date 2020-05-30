@@ -1,0 +1,272 @@
+import plotly.graph_objects as go
+import pandas as pd
+
+import dash
+import dash_core_components as dcc
+import dash_html_components as html
+from dash.dependencies import Input, Output
+import dash_table
+import dash_bootstrap_components as dbc
+
+from app import app
+
+#import dash_bootstrap_components as dbc
+
+#external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+#external_stylesheets = [dbc.themes.LUX]
+
+#app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+
+df = pd.read_csv('covid19 updated.csv')
+
+# rename columns
+df.rename(columns={'Intensive Care Unit (ICU)': 'Intensive Care Unit',
+                   'General Wards MOH report': 'General wards',
+                   'In Isolation MOH report': 'In Isolation',
+                   'Total Completed Isolation MOH report': 'Total completed isolation',
+                   'Total Hospital Discharged MOH report': 'Total discharged from hospital',
+                   'Local cases residing in dorms MOH report': 'Local cases residing in dorms',
+                   'Local cases not residing in doms MOH report': 'Local cases not residing in dorms'},inplace=True)
+
+# good if there are many periods
+# available_periods = df['Period'].unique()
+
+layout = html.Div([
+    dbc.Container([
+        dbc.Row([
+            dbc.Col(html.H1("COVID-19 in Singapore at a glance"), className="mb-2")
+        ]),
+        dbc.Row([
+            dbc.Col(html.H6(children='Visualising trends across the different stages of the COVID-19 outbreak in Singapore'), className="mb-4")
+        ]),
+
+        dbc.Row([
+            dbc.Col(dbc.Card(html.H3(children='Latest Update',
+                                     className="text-center text-light bg-dark"), body=True, color="dark")
+                    # outline=True)
+                    , className="mb-4")
+        ]),
+    dcc.RadioItems(
+        id='table_type',
+        options=[{'label': i, 'value': i} for i in ['Condensed table', 'Full table']],
+        value='Condensed table',
+        labelStyle={'display': 'inline-block'}
+    ),
+    dash_table.DataTable(
+        id='datatable',
+        style_table={'overflowX': 'scroll',
+                        'padding': 10},
+        style_header={'backgroundColor': '#25597f', 'color': 'white'},
+        style_cell={
+            'backgroundColor': 'white',
+            'color': 'black',
+            'fontSize': 13,
+            'font-family': 'Nunito Sans'}),
+
+        dbc.Row([
+            dbc.Col(dbc.Card(html.H3(children='Situation Across Different Periods of the Outbreak',
+                                     className="text-center text-light bg-dark"), body=True, color="dark")
+                    # outline=True)
+                    , className="mt-4 mb-5")
+        ]),
+
+    #html.Label('Select Period:'),
+    dcc.Dropdown(
+        id='covid_period',
+        #options=[{'label': i, 'value': i} for i in available_periods],
+        options=[
+            {'label': 'Pre-DORSCON Orange', 'value': 'Pre-DORSCON'},
+            {'label': 'DORSCON Orange', 'value': 'DORSCON'},
+            {'label': 'Circuit Breaker', 'value': 'CB'}
+        ],
+        value='CB',
+        # multi=True
+        style={'width': '48%', 'margin-left':'5px'}
+        ),
+
+    dbc.Row([
+        dbc.Col(html.H5(children='Daily COVID-19 cases in Singapore', className="text-center"),
+                className="mt-4")
+    ]),
+
+    dcc.Graph(id='graph_by_period',
+              hoverData={'points': [{'x': '11-May'}]}),
+
+    dbc.Row([
+        dbc.Col(html.H5(children='Breakdown of cases: local vs imported', className="text-center"),
+                width=6, className="mt-4"),
+        dbc.Col(html.H5(children='Breakdown of cases: whether residing in dorms', className="text-center"), width=6,
+                className="mt-4"),
+        ]),
+    dbc.Row([
+        dbc.Col(
+            dcc.Graph(id='local and imported'), width=6),
+        dbc.Col(dcc.Graph(id='dorms'), width=6)
+    ]),
+
+    dcc.Dropdown(
+        id='choose_hospital_situation',
+        #options=[{'label': i, 'value': i} for i in available_periods],
+        options=[
+            {'label': 'ICU', 'value': 'Intensive Care Unit'},
+            {'label': 'General wards', 'value': 'General wards'},
+            {'label': 'Isolation', 'value': 'In Isolation'},
+            {'label': 'Total completed isolation', 'value': 'Total completed isolation'},
+            {'label': 'Total discharged from hospital', 'value': 'Total discharged from hospital'},
+        ],
+        value=['Intensive Care Unit', 'General wards'],
+        multi=True,
+        style={'width': '70%', 'margin-left':'5px'}
+        ),
+
+    dbc.Row([
+        dbc.Col(html.H5(children='Situation in local hospitals', className="text-center"),
+                className="mt-4")
+    ]),
+
+    dcc.Graph(id='situation_graph_by_period')
+    ])
+
+])
+
+
+@app.callback([Output('datatable', 'data'),
+              Output('datatable', 'columns')],
+             [Input('table_type', 'value')])
+
+def update_columns(value):
+    df2 = df.tail(1)
+    col = ['Daily Imported', 'Daily Local transmission']
+    df2['Daily Confirmed Cases'] = df2[col].sum(axis=1)
+
+    condensed_col = ['Date', 'Daily Confirmed Cases', 'Cumulative Confirmed', 'Daily Discharged',
+                     'Cumulative Discharged', 'Daily Deaths', 'Cumulative Deaths', 'Daily Imported',
+                     'Local cases residing in dorms',
+                     'Local cases not residing in dorms']
+
+    full_col = ['Date', 'Daily Confirmed Cases', 'Cumulative Confirmed', 'Daily Discharged',
+                'Cumulative Discharged', 'Daily Deaths', 'Cumulative Deaths', 'Daily Imported',
+                'Local cases residing in dorms', 'Local cases not residing in dorms',
+                'Intensive Care Unit', 'General wards', 'In Isolation']
+
+    if value == 'Condensed table':
+        columns = [{"name": i, "id": i} for i in condensed_col]
+        data=df2.to_dict('records')
+    elif value == 'Full table':
+        columns = [{"name": i, "id": i} for i in full_col]
+        data=df2.to_dict('records')
+    return data, columns
+
+@app.callback(Output('graph_by_period', 'figure'),
+              [Input('covid_period', 'value')])
+
+def update_graph(covid_period_name):
+    dff = df[df.Period == covid_period_name]
+    # not sure why cannot Daily Confirmed is an invalid key
+    col = ['Daily Imported', 'Daily Local transmission']
+    dff['total'] = dff[col].sum(axis=1)
+    data = [go.Scatter(x=dff['Date'], y=dff['total'],
+                       mode='lines+markers',name='Daily confirmed')]#, marker_color='#525564')]
+    layout = go.Layout(
+        #title=go.layout.Title(text="Daily COVID-19 Cases in Singapore"),
+        #xaxis={'title': "Date"},
+        yaxis={'title': "Cases"},
+        paper_bgcolor = 'rgba(0,0,0,0)',
+        plot_bgcolor = 'rgba(0,0,0,0)',
+        template = "seaborn",
+        margin=dict(t=20)
+    )
+
+    return {'data': data, 'layout': layout}
+
+@app.callback([Output('local and imported', 'figure'),
+               Output('dorms', 'figure')],
+              [Input('graph_by_period', 'hoverData')])
+     #Input('covid_period', 'value')])
+
+def update_breakdown(hoverData):
+    day = hoverData['points'][0]['x']
+    dff = df[df['Date'] == day]
+    #dff = dff[dff.Period == covid_period_name]
+    fig2 = go.Figure()
+    fig2.add_trace(go.Bar(x=dff['Date'], y=dff['Daily Local transmission'],
+                          name='Local cases'))
+                          #marker_color='#74828F', name='Local cases'))
+    fig2.add_trace(go.Bar(x=dff['Date'], y=dff['Daily Imported'],
+                          name='Imported cases'))
+                          #marker_color='#96C0CE', name='Imported cases'))
+
+    # edit layout
+    fig2.update_layout(#title='Breakdown of cases: Local vs imported',
+                       #xaxis_title='Date',
+                       yaxis_title='Cases',
+                       paper_bgcolor='rgba(0,0,0,0)',
+                       plot_bgcolor='rgba(0,0,0,0)',
+                       template = "seaborn",
+                       margin=dict(t=20))
+
+    fig3 = go.Figure()
+    fig3.add_trace(go.Bar(x=dff['Date'], y=dff['Local cases residing in dorms'],
+                          name='Residing in dorms'))
+                          #marker_color='#BEB9B5', name='Residing in dorms'))
+    fig3.add_trace(go.Bar(x=dff['Date'], y=dff['Local cases not residing in dorms'],
+                          name='Not residing in dorms'))
+                          #marker_color='#C25B56', name='Not residing in dorms'))
+
+    # edit layout
+    fig3.update_layout(#title='Breakdown of cases: Whether residing in dorms',
+                       #xaxis_title='Date',
+                       yaxis_title='Cases',
+                       paper_bgcolor='rgba(0,0,0,0)',
+                       plot_bgcolor='rgba(0,0,0,0)',
+                       template = "seaborn",
+                       margin=dict(t=20))
+    return fig2, fig3
+
+@app.callback(Output('situation_graph_by_period', 'figure'),
+              [Input('covid_period', 'value'),
+               Input('choose_hospital_situation', 'value')])
+
+def update_situation_graph(covid_period_name, choose_hospital_situation_name):
+    dff = df[df.Period == covid_period_name]
+
+    trace = []
+
+    for i in choose_hospital_situation_name:
+        trace.append(go.Bar(name=i, x=dff['Date'], y=dff[i]))
+
+    data = trace
+
+    layout = go.Layout(
+        #title=go.layout.Title(text="Situation in local hospitals"),
+        #xaxis={'title': "Date"},
+        yaxis={'title': "Cases"},
+        barmode='stack',
+        paper_bgcolor = 'rgba(0,0,0,0)',
+        plot_bgcolor = 'rgba(0,0,0,0)',
+        template="seaborn",
+        margin=dict(t=20)
+        #colorway=['#525564', '#74828F', '#96C0CE', '#BEB9B5', '#C25B56']
+    )
+
+    return {'data': data, 'layout': layout}
+
+    # fig4 = go.Figure(data=[
+    #     go.Bar(name='ICU', x=dff['Date'], y=dff['Intensive Care Unit (ICU)']),
+    #     go.Bar(name='General wards', x=dff['Date'], y=dff['General Wards MOH report']),
+    #     go.Bar(name='Isolation', x=dff['Date'], y=dff['In Isolation MOH report']),
+    #     go.Bar(name='Total completed isolation', x=dff['Date'], y=dff['Total Completed Isolation MOH report']),
+    #     go.Bar(name='Total discharged from hospital', x=dff['Date'], y=dff['Total Hospital Discharged MOH report'])
+    # ])
+    # # edit layout
+    # fig4.update_layout(barmode='stack',
+    #                    title='Situation in hospitals',
+    #                    # xaxis_title='Date',
+    #                    yaxis_title='Cases',
+    #                    plot_bgcolor='rgba(0,0,0,0)')
+    # return fig4
+
+
+
+# if __name__ == '__main__':
+#     app.run_server(host='127.0.0.1', debug=True)
