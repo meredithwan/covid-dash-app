@@ -30,32 +30,31 @@ layout = html.Div([
                                                className="text-center"),
                                        dbc.Row([dbc.Col(dbc.Button("Global", href="https://data.europa.eu/euodp/en/data/dataset/covid-19-coronavirus-data/resource/55e8f966-d5c8-438e-85bc-c7a5a26f4863",
                                                                    color="primary"),
-                                                        className="mt-4"),
+                                                        className="mt-3"),
                                                 dbc.Col(dbc.Button("Singapore", href="https://data.world/hxchua/covid-19-singapore",
                                                                    color="primary"),
-                                                        className="mt-4")], justify="center")
+                                                        className="mt-3")], justify="center")
                                        ],
                              body=True, color="dark", outline=True)
                     , width=4, className="mb-4"),
 
             dbc.Col(dbc.Card(children=[html.H3(children='Access the code used to build this dashboard',
                                                className="text-center"),
-                                       dbc.Row([dbc.Col(dbc.Button("GitHub",
-                                                                   href="https://github.com/meredithwan/covid-dash-app",
-                                                                   color="primary"),
-                                                        width={"size": 2, "offset": 3}, className="mt-4")
-                                               ])
+                                       dbc.Button("GitHub",
+                                                  href="https://github.com/meredithwan/covid-dash-app",
+                                                  color="primary",
+                                                  className="mt-3"),
                                        ],
                              body=True, color="dark", outline=True)
                     , width=4, className="mb-4"),
 
             dbc.Col(dbc.Card(children=[html.H3(children='Read the Medium article detailing the process',
                                                className="text-center"),
-                                       dbc.Row([dbc.Col(dbc.Button("Medium",
-                                                                   href="https://www.google.com",
-                                                                   color="primary"),
-                                                        width={"size": 2, "offset": 3}, className="mt-4")
-                                                ])
+                                       dbc.Button("Medium",
+                                                  href="https://www.google.com",
+                                                  color="primary",
+                                                  className="mt-3"),
+
                                        ],
                              body=True, color="dark", outline=True)
                     , width=4, className="mb-4")
