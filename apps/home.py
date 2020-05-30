@@ -41,7 +41,7 @@ layout = html.Div([
             dbc.Col(dbc.Card(children=[html.H3(children='Access the code used to build this dashboard',
                                                className="text-center"),
                                        dbc.Row([dbc.Col(dbc.Button("GitHub",
-                                                                   href="https://www.google.com",
+                                                                   href="https://github.com/meredithwan/covid-dash-app",
                                                                    color="primary"),
                                                         width={"size": 2, "offset": 3}, className="mt-4")
                                                ])
