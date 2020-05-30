@@ -5,24 +5,26 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output
-import dash_table
 import dash_bootstrap_components as dbc
 
 from app import app
 
+# needed if running single page dash app instead
 #external_stylesheets = [dbc.themes.LUX]
-
-#external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 #app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 df = pd.read_csv('COVID-19-geographic-disbtribution-worldwide.csv', index_col = 0)
 
+# preparing various dataframes for visualisation
 from datetime import datetime
 df.index = pd.to_datetime(df.index, format='%d/%m/%y')
 df = df.sort_index()
+# convert number of cases and deaths to per 1 million population figures
+# to allow for comparison
 df['cases per 1 mil'] = df['cases']/df['popData2018']*1000000
 df['deaths per 1 mil'] = df['deaths']/df['popData2018']*1000000
+# exclude observations from the Japan cruise ship
 df = df[df.continentExp != 'Other']
 
 df2 = df.copy()
@@ -36,6 +38,7 @@ df3 = df3.reset_index()
 df4 = df.copy()
 df4 = df4.groupby(['continentExp']).sum()
 
+# cumulative cases and deaths
 df5 = df.copy()
 df5 = df5.groupby(['continentExp','date']).sum()
 df5 = df5.reset_index()
@@ -45,6 +48,7 @@ df5['deaths per 1 mil'] = df5.groupby(['continentExp'])['deaths per 1 mil'].appl
 # good if there are many options
 available_countries = df['countriesAndTerritories'].unique()
 
+# change to app.layout if running as single page app instead
 layout = html.Div([
     dbc.Container([
         dbc.Row([
@@ -53,7 +57,7 @@ layout = html.Div([
         dbc.Row([
             dbc.Col(html.H6(children='Visualising trends across the world'), className="mb-4")
         ]),
-
+# choose between cases or deaths
     dcc.Dropdown(
         id='cases_or_deaths',
         options=[
@@ -68,11 +72,10 @@ layout = html.Div([
     dbc.Row([
         dbc.Col(dbc.Card(html.H3(children='Daily figures by continent (per 1 million people)',
                                  className="text-center text-light bg-dark"), body=True, color="dark")
-                         #outline=True)
         , className="mt-4 mb-4")
     ]),
     dbc.Row([
-        dbc.Col(html.H5(children='Latest update: 26 May 2020', className="text-center"),
+        dbc.Col(html.H5(children='Latest update: 29 May 2020', className="text-center"),
                          width=4, className="mt-4"),
         dbc.Col(html.H5(children='Daily figures since 31 Dec 2019', className="text-center"), width=8, className="mt-4"),
         ]),
@@ -86,11 +89,10 @@ layout = html.Div([
         dbc.Row([
             dbc.Col(dbc.Card(html.H3(children='Cumulative figures by continent (per 1 million people)',
                                      className="text-center text-light bg-dark"), body=True, color="dark")
-                    # outline=True)
                     , className="mb-4")
         ]),
         dbc.Row([
-            dbc.Col(html.H5(children='Latest update: 26 May 2020', className="text-center"),
+            dbc.Col(html.H5(children='Latest update: 29 May 2020', className="text-center"),
                     width=4, className="mt-4"),
             dbc.Col(html.H5(children='Cumulative figures since 31 Dec 2019', className="text-center"), width=8,
                     className="mt-4"),
@@ -104,7 +106,6 @@ layout = html.Div([
     dbc.Row([
         dbc.Col(dbc.Card(html.H3(children='Figures by country (per 1 million people)',
                                  className="text-center text-light bg-dark"), body=True, color="dark")
-                    # outline=True)
         , className="mb-4")
         ]),
 
@@ -130,142 +131,13 @@ layout = html.Div([
 
     dcc.Graph(id='total_cases_or_deaths_country'),
 
-    #html.Div(
-    #     dcc.RangeSlider(
-    #     id='period_slider',
-    #     min=12,
-    #     max=5,
-    #     value=[12,5],
-    #     marks={12:"December 2019",
-    #            1: "January 2020",
-    #            2: "February 2020",
-    #            3: "March 2020",
-    #            4: "April 2020",
-    #            5: "May 2020"},
-    #     step=1
-    # ), style={'width': '90%', 'padding': '0px 20px 20px 20px'})
 ])
 
 
 ])
 
-# @app.callback([Output('datatable', 'data'),
-#               Output('datatable', 'columns')],
-#              [Input('table_type', 'value')])
-#
-# def update_columns(value):
-#     df2 = df.tail(1)
-#     col = ['Daily Imported', 'Daily Local transmission']
-#     df2['Daily Confirmed Cases'] = df2[col].sum(axis=1)
-#
-#     condensed_col = ['Date', 'Daily Confirmed Cases', 'Cumulative Confirmed', 'Daily Discharged',
-#                      'Cumulative Discharged', 'Daily Deaths', 'Cumulative Deaths', 'Daily Imported',
-#                      'Local cases residing in dorms',
-#                      'Local cases not residing in dorms']
-#
-#     full_col = ['Date', 'Daily Confirmed Cases', 'Cumulative Confirmed', 'Daily Discharged',
-#                 'Cumulative Discharged', 'Daily Deaths', 'Cumulative Deaths', 'Daily Imported',
-#                 'Local cases residing in dorms', 'Local cases not residing in dorms',
-#                 'Intensive Care Unit', 'General wards', 'In Isolation']
-#
-#     if value == 'Condensed table':
-#         columns = [{"name": i, "id": i} for i in condensed_col]
-#         data=df2.to_dict('records')
-#     elif value == 'Full table':
-#         columns = [{"name": i, "id": i} for i in full_col]
-#         data=df2.to_dict('records')
-#     return data, columns
-
-# @app.callback(Output('cases_pie_choice', 'figure'),
-#               [Input('choice', 'value')])
-#
-# def update_graph(choice_name):
-#     if choice_name == 'Daily':
-#         fig2 = go.Figure()
-#         fig2.add_trace(go.Pie(labels=df3['continentExp'], values=df3['cases per 1000 pop']))
-#         # data = [go.Pie(labels=df3['continentExp'], values=df3['cases per 1000 pop'])]
-#         #                #, name='Daily confirmed', marker_color='#525564')]
-#         # layout = go.Layout(
-#         #     title=go.layout.Title(text="Daily COVID-19 Cases in Singapore"),
-#         #     # xaxis={'title': "Date"},
-#         #     # yaxis={'title': "Cases"},
-#         #     paper_bgcolor='rgba(0,0,0,0)',
-#         #     plot_bgcolor='rgba(0,0,0,0)'
-#         # )
-#     else:
-#         fig2 = go.Figure()
-#         fig2.add_trace(go.Pie(labels=df4.index, values=df4['cases per 1000 pop']))
-#
-#     return fig2
-        # data = [go.Pie(labels=df4.index, values=df4['cases per 1000 pop'])]
-        # # , name='Daily confirmed', marker_color='#525564')]
-        # layout = go.Layout(
-        #     title=go.layout.Title(text="Daily COVID-19 Cases in Singapore"),
-        #     # xaxis={'title': "Date"},
-        #     # yaxis={'title': "Cases"},
-        #     paper_bgcolor='rgba(0,0,0,0)',
-        #     plot_bgcolor='rgba(0,0,0,0)'
-        # )
-
-    # data = [go.Scatter(x=dff['Date'], y=dff['total'],
-    #                    mode='lines+markers',name='Daily confirmed', marker_color='#525564')]
-    # layout = go.Layout(
-    #     title=go.layout.Title(text="Daily COVID-19 Cases in Singapore"),
-    #     #xaxis={'title': "Date"},
-    #     yaxis={'title': "Cases"},
-    #     paper_bgcolor = 'rgba(0,0,0,0)',
-    #     plot_bgcolor = 'rgba(0,0,0,0)'
-    # )
-
-    # fig = go.Figure()
-    # fig.add_trace(go.Scatter(x=dff['Date'], y=dff['total'],
-    #                                       mode='lines+markers',name='Daily confirmed cases'))
-    #
-    # # edit layout
-    # fig.update_layout(title='Transmissions in Singapore',
-    #                    xaxis_title='Date',
-    #                    yaxis_title='Number of cases',
-    #                   plot_bgcolor='rgba(0,0,0,0)')
-    # return figure
-
-    #return {'data': data, 'layout': layout}
-
-# @app.callback([Output('local and imported', 'figure'),
-#                Output('dorms', 'figure')],
-#     [Input('graph_by_period', 'hoverData')])
-#      #Input('covid_period', 'value')])
-#
-# def update_breakdown(hoverData):
-#     day = hoverData['points'][0]['x']
-#     dff = df[df['Date'] == day]
-#     #dff = dff[dff.Period == covid_period_name]
-#     fig2 = go.Figure()
-#     fig2.add_trace(go.Bar(x=dff['Date'], y=dff['Daily Local transmission'],
-#                           marker_color='#74828F', name='Local cases'))
-#     fig2.add_trace(go.Bar(x=dff['Date'], y=dff['Daily Imported'],
-#                           marker_color='#96C0CE', name='Imported cases'))
-#
-#     # edit layout
-#     fig2.update_layout(title='Breakdown of cases: Local vs imported',
-#                     #xaxis_title='Date',
-#                     yaxis_title='Cases',
-#                     paper_bgcolor='rgba(0,0,0,0)',
-#                     plot_bgcolor='rgba(0,0,0,0)')
-#
-#     fig3 = go.Figure()
-#     fig3.add_trace(go.Bar(x=dff['Date'], y=dff['Local cases residing in dorms'],
-#                           marker_color='#BEB9B5', name='Residing in dorms'))
-#     fig3.add_trace(go.Bar(x=dff['Date'], y=dff['Local cases not residing in dorms'],
-#                           marker_color='#C25B56', name='Not residing in dorms'))
-#
-#     # edit layout
-#     fig3.update_layout(title='Breakdown of cases: Whether residing in dorms',
-#                        #xaxis_title='Date',
-#                        yaxis_title='Cases',
-#                        paper_bgcolor='rgba(0,0,0,0)',
-#                        plot_bgcolor='rgba(0,0,0,0)')
-#     return fig2, fig3
-#
+# page callbacks
+# display pie charts and line charts to show number of cases or deaths
 @app.callback([Output('pie_cases_or_deaths', 'figure'),
                Output('line_cases_or_deaths', 'figure'),
                Output('total_pie_cases_or_deaths', 'figure'),
@@ -278,8 +150,7 @@ def update_graph(choice):
         go.Pie(labels=df3['continentExp'], values=df3[choice])
         ])
 
-    fig.update_layout(#title='Latest Daily Figure by Continent (26 May 2020)',
-                      paper_bgcolor='rgba(0,0,0,0)',
+    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)',
                       plot_bgcolor='rgba(0,0,0,0)',
                       template = "seaborn",
                       margin=dict(t=0))
@@ -293,8 +164,7 @@ def update_graph(choice):
                                  name=col,
                                  mode='markers+lines'))
 
-    fig2.update_layout(#title='Daily Figures by Continent',
-                       yaxis_title='Number Per 1 Million',
+    fig2.update_layout(yaxis_title='Number Per 1 Million',
                        paper_bgcolor='rgba(0,0,0,0)',
                        plot_bgcolor='rgba(0,0,0,0)',
                        template = "seaborn",
@@ -304,8 +174,7 @@ def update_graph(choice):
         go.Pie(labels=df4.index, values=df4[choice])
         ])
 
-    fig3.update_layout(#title='Latest Total Figure by Continent (26 May 2020)',
-                       paper_bgcolor='rgba(0,0,0,0)',
+    fig3.update_layout(paper_bgcolor='rgba(0,0,0,0)',
                        plot_bgcolor='rgba(0,0,0,0)',
                        template = "seaborn",
                        margin=dict(t=0))
@@ -319,8 +188,7 @@ def update_graph(choice):
                                  name=col,
                                  mode='markers+lines'))
 
-    fig4.update_layout(#title='Daily Figures by Continent',
-                       yaxis_title='Number Per 1 Million',
+    fig4.update_layout(yaxis_title='Number Per 1 Million',
                        paper_bgcolor='rgba(0,0,0,0)',
                        plot_bgcolor='rgba(0,0,0,0)',
                        template = "seaborn",
@@ -328,11 +196,11 @@ def update_graph(choice):
 
     return fig, fig2, fig3, fig4
 
+# to allow comparison of cases or deaths among countries
 @app.callback([Output('cases_or_deaths_country', 'figure'),
                Output('total_cases_or_deaths_country', 'figure')],
               [Input('cases_or_deaths', 'value'),
-               Input('countries', 'value')])#,
-               #Input('period_slider', 'value')])
+               Input('countries', 'value')])
 
 def update_graph(cases_or_deaths_name, countries_name):
 
@@ -357,8 +225,7 @@ def update_graph(cases_or_deaths_name, countries_name):
                               name=col,
                               mode='markers+lines'))
 
-    fig5.update_layout(#title='Daily Figures by Country',
-                       yaxis_title='Number Per 1 Million',
+    fig5.update_layout(yaxis_title='Number Per 1 Million',
                        paper_bgcolor='rgba(0,0,0,0)',
                        plot_bgcolor='rgba(0,0,0,0)',
                        template = "seaborn",
@@ -370,8 +237,7 @@ def update_graph(cases_or_deaths_name, countries_name):
                                   name=col,
                                   mode='markers+lines'))
 
-        fig6.update_layout(#title='Cumulative Figures by Country',
-                           yaxis_title='Number Per 1 Million',
+        fig6.update_layout(yaxis_title='Number Per 1 Million',
                            paper_bgcolor='rgba(0,0,0,0)',
                            plot_bgcolor='rgba(0,0,0,0)',
                            template = "seaborn",
@@ -379,6 +245,6 @@ def update_graph(cases_or_deaths_name, countries_name):
 
     return fig5, fig6
 
-
+# needed only if running this as a single page app
 # if __name__ == '__main__':
 #     app.run_server(host='127.0.0.1', debug=True)

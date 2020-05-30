@@ -10,9 +10,7 @@ import dash_bootstrap_components as dbc
 
 from app import app
 
-#import dash_bootstrap_components as dbc
-
-#external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+# needed only if running this as a single page app
 #external_stylesheets = [dbc.themes.LUX]
 
 #app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
@@ -28,9 +26,7 @@ df.rename(columns={'Intensive Care Unit (ICU)': 'Intensive Care Unit',
                    'Local cases residing in dorms MOH report': 'Local cases residing in dorms',
                    'Local cases not residing in doms MOH report': 'Local cases not residing in dorms'},inplace=True)
 
-# good if there are many periods
-# available_periods = df['Period'].unique()
-
+# change to app.layout if running as single page app instead
 layout = html.Div([
     dbc.Container([
         dbc.Row([
@@ -43,9 +39,9 @@ layout = html.Div([
         dbc.Row([
             dbc.Col(dbc.Card(html.H3(children='Latest Update',
                                      className="text-center text-light bg-dark"), body=True, color="dark")
-                    # outline=True)
                     , className="mb-4")
         ]),
+
     dcc.RadioItems(
         id='table_type',
         options=[{'label': i, 'value': i} for i in ['Condensed table', 'Full table']],
@@ -66,21 +62,17 @@ layout = html.Div([
         dbc.Row([
             dbc.Col(dbc.Card(html.H3(children='Situation Across Different Periods of the Outbreak',
                                      className="text-center text-light bg-dark"), body=True, color="dark")
-                    # outline=True)
                     , className="mt-4 mb-5")
         ]),
 
-    #html.Label('Select Period:'),
     dcc.Dropdown(
         id='covid_period',
-        #options=[{'label': i, 'value': i} for i in available_periods],
         options=[
             {'label': 'Pre-DORSCON Orange', 'value': 'Pre-DORSCON'},
             {'label': 'DORSCON Orange', 'value': 'DORSCON'},
             {'label': 'Circuit Breaker', 'value': 'CB'}
         ],
         value='CB',
-        # multi=True
         style={'width': '48%', 'margin-left':'5px'}
         ),
 
@@ -106,7 +98,6 @@ layout = html.Div([
 
     dcc.Dropdown(
         id='choose_hospital_situation',
-        #options=[{'label': i, 'value': i} for i in available_periods],
         options=[
             {'label': 'ICU', 'value': 'Intensive Care Unit'},
             {'label': 'General wards', 'value': 'General wards'},
@@ -129,7 +120,8 @@ layout = html.Div([
 
 ])
 
-
+# page callbacks
+# choose between condensed table and full table
 @app.callback([Output('datatable', 'data'),
               Output('datatable', 'columns')],
              [Input('table_type', 'value')])
@@ -157,19 +149,19 @@ def update_columns(value):
         data=df2.to_dict('records')
     return data, columns
 
+# allow for easy sieving of data to see how the situation has changed
+# can observe whether government measures are effective in reducing the number of cases
 @app.callback(Output('graph_by_period', 'figure'),
               [Input('covid_period', 'value')])
 
 def update_graph(covid_period_name):
     dff = df[df.Period == covid_period_name]
-    # not sure why cannot Daily Confirmed is an invalid key
+    # not sure why this doesn't work, Daily Confirmed is an invalid key
     col = ['Daily Imported', 'Daily Local transmission']
     dff['total'] = dff[col].sum(axis=1)
     data = [go.Scatter(x=dff['Date'], y=dff['total'],
-                       mode='lines+markers',name='Daily confirmed')]#, marker_color='#525564')]
+                       mode='lines+markers',name='Daily confirmed')]
     layout = go.Layout(
-        #title=go.layout.Title(text="Daily COVID-19 Cases in Singapore"),
-        #xaxis={'title': "Date"},
         yaxis={'title': "Cases"},
         paper_bgcolor = 'rgba(0,0,0,0)',
         plot_bgcolor = 'rgba(0,0,0,0)',
@@ -182,24 +174,20 @@ def update_graph(covid_period_name):
 @app.callback([Output('local and imported', 'figure'),
                Output('dorms', 'figure')],
               [Input('graph_by_period', 'hoverData')])
-     #Input('covid_period', 'value')])
 
 def update_breakdown(hoverData):
     day = hoverData['points'][0]['x']
     dff = df[df['Date'] == day]
-    #dff = dff[dff.Period == covid_period_name]
+
     fig2 = go.Figure()
     fig2.add_trace(go.Bar(x=dff['Date'], y=dff['Daily Local transmission'],
                           name='Local cases'))
-                          #marker_color='#74828F', name='Local cases'))
+
     fig2.add_trace(go.Bar(x=dff['Date'], y=dff['Daily Imported'],
                           name='Imported cases'))
-                          #marker_color='#96C0CE', name='Imported cases'))
 
     # edit layout
-    fig2.update_layout(#title='Breakdown of cases: Local vs imported',
-                       #xaxis_title='Date',
-                       yaxis_title='Cases',
+    fig2.update_layout(yaxis_title='Cases',
                        paper_bgcolor='rgba(0,0,0,0)',
                        plot_bgcolor='rgba(0,0,0,0)',
                        template = "seaborn",
@@ -208,21 +196,19 @@ def update_breakdown(hoverData):
     fig3 = go.Figure()
     fig3.add_trace(go.Bar(x=dff['Date'], y=dff['Local cases residing in dorms'],
                           name='Residing in dorms'))
-                          #marker_color='#BEB9B5', name='Residing in dorms'))
+
     fig3.add_trace(go.Bar(x=dff['Date'], y=dff['Local cases not residing in dorms'],
                           name='Not residing in dorms'))
-                          #marker_color='#C25B56', name='Not residing in dorms'))
 
     # edit layout
-    fig3.update_layout(#title='Breakdown of cases: Whether residing in dorms',
-                       #xaxis_title='Date',
-                       yaxis_title='Cases',
+    fig3.update_layout(yaxis_title='Cases',
                        paper_bgcolor='rgba(0,0,0,0)',
                        plot_bgcolor='rgba(0,0,0,0)',
                        template = "seaborn",
                        margin=dict(t=20))
     return fig2, fig3
 
+# update hospital situation graph
 @app.callback(Output('situation_graph_by_period', 'figure'),
               [Input('covid_period', 'value'),
                Input('choose_hospital_situation', 'value')])
@@ -238,35 +224,16 @@ def update_situation_graph(covid_period_name, choose_hospital_situation_name):
     data = trace
 
     layout = go.Layout(
-        #title=go.layout.Title(text="Situation in local hospitals"),
-        #xaxis={'title': "Date"},
         yaxis={'title': "Cases"},
         barmode='stack',
         paper_bgcolor = 'rgba(0,0,0,0)',
         plot_bgcolor = 'rgba(0,0,0,0)',
         template="seaborn",
         margin=dict(t=20)
-        #colorway=['#525564', '#74828F', '#96C0CE', '#BEB9B5', '#C25B56']
     )
 
     return {'data': data, 'layout': layout}
 
-    # fig4 = go.Figure(data=[
-    #     go.Bar(name='ICU', x=dff['Date'], y=dff['Intensive Care Unit (ICU)']),
-    #     go.Bar(name='General wards', x=dff['Date'], y=dff['General Wards MOH report']),
-    #     go.Bar(name='Isolation', x=dff['Date'], y=dff['In Isolation MOH report']),
-    #     go.Bar(name='Total completed isolation', x=dff['Date'], y=dff['Total Completed Isolation MOH report']),
-    #     go.Bar(name='Total discharged from hospital', x=dff['Date'], y=dff['Total Hospital Discharged MOH report'])
-    # ])
-    # # edit layout
-    # fig4.update_layout(barmode='stack',
-    #                    title='Situation in hospitals',
-    #                    # xaxis_title='Date',
-    #                    yaxis_title='Cases',
-    #                    plot_bgcolor='rgba(0,0,0,0)')
-    # return fig4
-
-
-
+# needed only if running this as a single page app
 # if __name__ == '__main__':
 #     app.run_server(host='127.0.0.1', debug=True)

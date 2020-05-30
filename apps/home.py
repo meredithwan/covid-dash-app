@@ -1,15 +1,12 @@
-import plotly.graph_objects as go
-import pandas as pd
-
-import dash
-import dash_core_components as dcc
 import dash_html_components as html
-from dash.dependencies import Input, Output
-import dash_table
 import dash_bootstrap_components as dbc
 
-from app import app
+# needed only if running this as a single page app
+#external_stylesheets = [dbc.themes.LUX]
 
+#app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+
+# change to app.layout if running as single page app instead
 layout = html.Div([
     dbc.Container([
         dbc.Row([
@@ -19,14 +16,12 @@ layout = html.Div([
         dbc.Row([
             dbc.Col(html.H5(children='This app marks my very first attempt at using Plotly, Dash and Bootstrap! '
                                      )
-                            #, className="text-center")
                     , className="mb-4")
             ]),
 
         dbc.Row([
             dbc.Col(html.H5(children='It consists of two main pages: Global, which gives an overview of the COVID-19 cases and deaths around the world, '
                                      'Singapore, which gives an overview of the situation in Singapore after different measures have been implemented by the local government.')
-                        # , className="text-center")
                     , className="mb-5")
         ]),
 
@@ -73,6 +68,6 @@ layout = html.Div([
 
 ])
 
-
+# needed only if running this as a single page app
 # if __name__ == '__main__':
 #     app.run_server(host='127.0.0.1', debug=True)
