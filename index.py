@@ -13,7 +13,7 @@ from apps import global_situation, singapore, home
 # https://github.com/facultyai/dash-bootstrap-components/blob/master/examples/advanced-component-usage/Navbars.py
 dropdown = dbc.DropdownMenu(
     children=[
-        dbc.DropdownMenuItem("Home", href="/haha"),
+        dbc.DropdownMenuItem("Home", href="/home"),
         dbc.DropdownMenuItem("Global", href="/global_situation"),
         dbc.DropdownMenuItem("Singapore", href="/singapore"),
     ],

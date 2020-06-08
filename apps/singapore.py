@@ -70,10 +70,11 @@ layout = html.Div([
         options=[
             {'label': 'Pre-DORSCON Orange', 'value': 'Pre-DORSCON'},
             {'label': 'DORSCON Orange', 'value': 'DORSCON'},
-            {'label': 'Circuit Breaker', 'value': 'CB'}
+            {'label': 'Circuit Breaker', 'value': 'CB'},
+            {'label': 'Phase 1: Safe Re-opening', 'value': 'Phase1'}
         ],
         value='CB',
-        style={'width': '48%', 'margin-left':'5px'}
+        style={'width': '65%', 'margin-left':'5px'}
         ),
 
     dbc.Row([

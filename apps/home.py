@@ -51,7 +51,7 @@ layout = html.Div([
             dbc.Col(dbc.Card(children=[html.H3(children='Read the Medium article detailing the process',
                                                className="text-center"),
                                        dbc.Button("Medium",
-                                                  href="https://www.google.com",
+                                                  href="https://medium.com/@meredithwan",
                                                   color="primary",
                                                   className="mt-3"),
 
