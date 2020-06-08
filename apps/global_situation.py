@@ -75,7 +75,7 @@ layout = html.Div([
         , className="mt-4 mb-4")
     ]),
     dbc.Row([
-        dbc.Col(html.H5(children='Latest update: 29 May 2020', className="text-center"),
+        dbc.Col(html.H5(children='Latest update: 7 June 2020', className="text-center"),
                          width=4, className="mt-4"),
         dbc.Col(html.H5(children='Daily figures since 31 Dec 2019', className="text-center"), width=8, className="mt-4"),
         ]),
@@ -92,7 +92,7 @@ layout = html.Div([
                     , className="mb-4")
         ]),
         dbc.Row([
-            dbc.Col(html.H5(children='Latest update: 29 May 2020', className="text-center"),
+            dbc.Col(html.H5(children='Latest update: 7 June 2020', className="text-center"),
                     width=4, className="mt-4"),
             dbc.Col(html.H5(children='Cumulative figures since 31 Dec 2019', className="text-center"), width=8,
                     className="mt-4"),
